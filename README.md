@@ -180,14 +180,20 @@ picrust2_out_pipeline/
 Open `MICROBIAL_ANALYSIS_USER.R` and update the **configuration block** at the top:
 
 ```r
-exp1 <- list(
-  otu  = "<path>/qiime2_output/exported/feature-table.tsv",
-  tax  = "<path>/qiime2_output/exported/taxonomy.tsv",
-  meta = "<path>/metadata.tsv"
-)
+# ---- Experiment paths ----
+exp1 <- list(otu="path/HC/feature-table_controls.tsv",
+             tax="path/HC/taxonomy_controls.tsv",
+             meta="path/HC/META_CONTROLS.tsv", name="HC")
 
-GROUP_COL    <- "GROUP"                          # exact column name in metadata
-GROUP_LEVELS <- c("HC", "HD", "VHD")            # control group first
+exp2 <- list(otu="path/HD/feature-table_HD.tsv",
+             tax="path/HD/taxonomy_HD.tsv",
+             meta="path/HD/MD_60ALCOHOL.tsv", name="HD")
+
+exp3 <- list(otu="path/VHD/feature-table_VHD.tsv",
+             tax="path/VHD/taxonomy_VHD.tsv",
+             meta="path/VHD/MD_118ALCOHOL.tsv", name="VHD")
+
+)
 ```
 
 Then run the script **line by line** or source it entirely. Outputs are saved automatically to `results/`.
@@ -227,7 +233,7 @@ This script uses the same metadata grouping as Stage 3 (`GROUP_COL`, `GROUP_LEVE
 PICRUSt2 enzyme and pathway tables are transposed to samples × features matrices, merged with group labels, filtered for zero-variance features, and normalised to relative abundances per sample.
 
 #### ML Classification
-Three classifiers are trained to discriminate `Healthy control` vs `60_AUD`:
+Three classifiers are trained to discriminate `HC` vs `HD` vs `VHD`:
 
 | Classifier | Details |
 |-----------|---------|
@@ -238,7 +244,7 @@ Three classifiers are trained to discriminate `Healthy control` vs `60_AUD`:
 Training strategy: stratified 5-fold cross-validation, 10 repetitions.  
 Performance metrics: Accuracy, AUC-ROC, Sensitivity, Specificity.
 
-#### 🏆 Top 5 Features Ranked by Importance
+#### Top 5 Features Ranked by Importance
 Feature importance scores are extracted from the best-performing algorithm (by AUC-ROC). The **top 5 enzymes (EC numbers)** and **top 5 MetaCyc pathways** are reported, ranked by mean importance across CV folds.
 
 #### Figures produced
@@ -255,4 +261,5 @@ Feature importance scores are extracted from the best-performing algorithm (by A
 <p align="center">
   <sub>Built with QIIME2 · PICRUSt2 · R · vegan · phyloseq</sub>
 </p>
+
 
