@@ -222,7 +222,42 @@ Indices calculated: **Observed Species**, **Chao1**, **Shannon**, **Simpson**
 Open `FUNCTIONAL_ANALYSIS_OPT.R` and set the PICRUSt2 output path:
 
 ```r
-picrust2_path <- "<path>/picrust2_out_pipeline"
+# =========================================
+# ---- FUNCTIONS ----
+# =========================================
+# Load PICRUSt2 outputs
+load_picrust_data <- function(picrust_path, experiment_name) {
+  metagenome <- fread(file.path(picrust_path, "pathways_out", "path_abun_unstrat.tsv.gz"), header=TRUE, sep="\t") %>% as.data.frame()
+  enzyme     <- fread(file.path(picrust_path, "EC_metagenome_out", "pred_metagenome_unstrat.tsv.gz"), header=TRUE, sep="\t") %>% as.data.frame()
+  rownames(metagenome) <- metagenome[,1]; metagenome <- metagenome[,-1]
+  rownames(enzyme)     <- enzyme[,1];     enzyme     <- enzyme[,-1]
+  list(name=experiment_name, metagenome=metagenome, enzyme=enzyme)
+}
+# =========================================
+# ---- EXPERIMENT PATHS ----
+# =========================================
+exp1 <- list(
+  otu="HC/feature-table_controls.tsv",
+  tax="HC/taxonomy_controls.tsv",
+  meta="HC/META_CONTROLS.tsv",
+  name="HC",
+  picrust="HC/picrust2_out_HC"
+)
+exp2 <- list(
+  otu="HD/feature-table_HD.tsv",
+  tax="HD/taxonomy_HD.tsv",
+  meta="HD/MD_60ALCOHOL.tsv",
+  name="HD",
+  picrust="HD/picrust2_out_HD"
+)
+exp3 <- list(
+  otu="VHD/feature-table_VHD.tsv",
+  tax="VHD/taxonomy_VHD.tsv",
+  meta="VHD/MD_118ALCOHOL.tsv",
+  name="VHD",
+  picrust="/VHD/picrust2_out_VHD"
+)
+
 ```
 
 This script uses the same metadata grouping as Stage 3 (`GROUP_COL`, `GROUP_LEVELS`).
@@ -261,5 +296,6 @@ Feature importance scores are extracted from the best-performing algorithm (by A
 <p align="center">
   <sub>Built with QIIME2 · PICRUSt2 · R · vegan · phyloseq</sub>
 </p>
+
 
 
