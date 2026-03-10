@@ -114,7 +114,7 @@ Processed tables used for statistical analyses are included in this repository.
 
 ## Stage 2 — QIIME2 Processing
 
-The three shell scripts must be executed **in order** with the QIIME2 conda environment active:
+qiime_metadata.sh and FULL_PROCESS_QIIME_RAW.sh shell scripts must be executed **in order** with the QIIME2 conda environment active:
 
 ```bash
 conda activate qiime2-amplicon-2024.2
@@ -157,6 +157,9 @@ qiime2_output/exported/
 ### 3. `PICRUST2.sh`
 Runs the full PICRUSt2 prediction pipeline on DADA2 representative sequences.
 
+```bash
+conda activate PICRUST2
+```
 ```bash
 bash scripts/PICRUST2.sh
 ```
@@ -252,3 +255,4 @@ Feature importance scores are extracted from the best-performing algorithm (by A
 <p align="center">
   <sub>Built with QIIME2 · PICRUSt2 · R · vegan · phyloseq</sub>
 </p>
+
