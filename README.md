@@ -219,83 +219,115 @@ Indices calculated: **Observed Species**, **Chao1**, **Shannon**, **Simpson**
 
 ## Stage 4 — Functional Profiling & Machine Learning
 
-Open `FUNCTIONAL_ANALYSIS_OPT.R` and set the PICRUSt2 output path:
+Open `FUNCTIONAL_ANALYSIS_OPT.R` and update the `picrust=` field inside **each** of the three `exp` list objects to point to your PICRUSt2 output directories:
 
 ```r
-# =========================================
-# ---- FUNCTIONS ----
-# =========================================
-# Load PICRUSt2 outputs
-load_picrust_data <- function(picrust_path, experiment_name) {
-  metagenome <- fread(file.path(picrust_path, "pathways_out", "path_abun_unstrat.tsv.gz"), header=TRUE, sep="\t") %>% as.data.frame()
-  enzyme     <- fread(file.path(picrust_path, "EC_metagenome_out", "pred_metagenome_unstrat.tsv.gz"), header=TRUE, sep="\t") %>% as.data.frame()
-  rownames(metagenome) <- metagenome[,1]; metagenome <- metagenome[,-1]
-  rownames(enzyme)     <- enzyme[,1];     enzyme     <- enzyme[,-1]
-  list(name=experiment_name, metagenome=metagenome, enzyme=enzyme)
-}
-# =========================================
-# ---- EXPERIMENT PATHS ----
-# =========================================
 exp1 <- list(
-  otu="HC/feature-table_controls.tsv",
-  tax="HC/taxonomy_controls.tsv",
-  meta="HC/META_CONTROLS.tsv",
-  name="HC",
-  picrust="HC/picrust2_out_HC"
+  otu     = "path/HC/feature-table_controls.tsv",
+  tax     = "path/HC/taxonomy_controls.tsv",
+  meta    = "path/HC/META_CONTROLS.tsv",
+  name    = "HC",
+  picrust = "path/HC/picrust2_out_HC"       # <-- update this
 )
 exp2 <- list(
-  otu="HD/feature-table_HD.tsv",
-  tax="HD/taxonomy_HD.tsv",
-  meta="HD/MD_60ALCOHOL.tsv",
-  name="HD",
-  picrust="HD/picrust2_out_HD"
+  otu     = "path/HD/feature-table_HD.tsv",
+  tax     = "path/HD/taxonomy_HD.tsv",
+  meta    = "path/HD/MD_60ALCOHOL.tsv",
+  name    = "HD",
+  picrust = "path/HD/picrust2_out_HD"       # <-- update this
 )
 exp3 <- list(
-  otu="VHD/feature-table_VHD.tsv",
-  tax="VHD/taxonomy_VHD.tsv",
-  meta="VHD/MD_118ALCOHOL.tsv",
-  name="VHD",
-  picrust="/VHD/picrust2_out_VHD"
+  otu     = "path/VHD/feature-table_VHD.tsv",
+  tax     = "path/VHD/taxonomy_VHD.tsv",
+  meta    = "path/VHD/MD_118ALCOHOL.tsv",
+  name    = "VHD",
+  picrust = "path/VHD/picrust2_out_VHD"    # <-- update this
 )
-
 ```
 
-This script uses the same metadata grouping as Stage 3 (`GROUP_COL`, `GROUP_LEVELS`).
+The `name` field in each list defines the group label used in all figures and statistical outputs. Update it to match your experimental groups if needed.
+
+Once paths are configured, run the full script. It executes the following stages in order:
+
+```
+1. Load PICRUSt2 Data
+        │
+        ▼
+2. Combine Experiments (Pathways & Enzymes separately)
+        │
+        ▼
+3. Machine Learning (RF / SVM / XGBoost)
+   ├── 5-fold cross-validation, 3 repeats
+   ├── Model comparison (Global Score)
+   └── Feature importance extraction
+        │
+        ▼
+4. Beta Diversity (PCoA + PERMANOVA)
+        │
+        ▼
+5. Violin Plots (Top features, importance bar, Dunn stats)
+        │
+        ▼
+6. Statistical Tests (Kruskal-Wallis + Dunn + η²)
+        │
+        ▼
+7. Export Results (PNG figures + Excel tables)
+```
+
+---
 
 ### What this script produces
 
 #### Feature Matrix Preparation
-PICRUSt2 enzyme and pathway tables are transposed to samples × features matrices, merged with group labels, filtered for zero-variance features, and normalised to relative abundances per sample.
+
+PICRUSt2 enzyme and pathway tables are transposed into samples × features matrices, merged with group labels, and normalized to relative abundances per sample. Pathways and enzymes are processed independently throughout the pipeline.
 
 #### ML Classification
-Three classifiers are trained to discriminate `HC` vs `HD` vs `VHD`:
 
-| Classifier | Details |
-|-----------|---------|
-| **SVM** | Radial basis function kernel, tuned via cross-validation |
-| **Random Forest** | 500 trees, out-of-bag error estimation |
-| **XGBoost** | Gradient boosted trees with early stopping |
+Three classifiers are trained and compared using `caret` with repeated k-fold cross-validation:
 
-Training strategy: stratified 5-fold cross-validation, 10 repetitions.  
-Performance metrics: Accuracy, AUC-ROC, Sensitivity, Specificity.
+| Algorithm | Key settings |
+|---|---|
+| **Random Forest** | `method = "rf"`, feature importance enabled |
+| **SVM (Radial)** | `method = "svmRadial"`, center + scale preprocessing, `tuneLength = 5` |
+| **XGBoost** | `method = "xgbTree"`, `tuneLength = 3` |
+
+```
+Method:  Repeated k-fold cross-validation
+Folds:   5
+Repeats: 3
+Metrics: Accuracy, Kappa, F1 Score, Sensitivity, Specificity
+```
+
+The best-performing algorithm is selected by **Global Score** (mean of all five metrics). Feature importances from the winning model are used in all downstream plots and tables.
 
 #### Top 5 Features Ranked by Importance
-Feature importance scores are extracted from the best-performing algorithm (by AUC-ROC). The **top 5 enzymes (EC numbers)** and **top 5 MetaCyc pathways** are reported, ranked by mean importance across CV folds.
+
+The top 5 **MetaCyc pathways** and top 5 **Enzyme Commission numbers** are extracted from the best model's importance scores and carried forward into violin plots and statistical tests.
 
 #### Figures produced
-- PCoA plots of enzyme and pathway abundance matrices
-- Violin plots of top 5 discriminative enzymes and pathways by group
-- Algorithm performance comparison (SVM vs RF vs XGBoost)
+
+- `model_performance.png` — side-by-side bar plots comparing Accuracy, Kappa, F1, Sensitivity, Specificity, and Global Score for all three algorithms, faceted by Pathways vs. Enzymes
+- `p_path.png` — PCoA (Bray-Curtis) ordination for pathway abundances, annotated with PERMANOVA R² and p-value
+- `p_enz.png` — PCoA (Bray-Curtis) ordination for enzyme abundances, annotated with PERMANOVA R² and p-value
+- `Figure_Combined_Pathways_Enzymes.png` — two-panel figure (A: pathways, B: enzymes) showing violin plots of the top 5 features per level, with ML importance bars and Dunn post-hoc significance brackets
+
+#### Statistical tables produced
+
+- `Summary_Pathways_Statistics.xlsx` — Kruskal-Wallis p-values and η² effect sizes for top pathway features
+- `Summary_Enzymes_Statistics.xlsx` — Kruskal-Wallis p-values and η² effect sizes for top enzyme features
+- `Posthoc_Dunn_Pathways.xlsx` — pairwise Dunn test results (Bonferroni-adjusted) for pathways
+- `Posthoc_Dunn_Enzymes.xlsx` — pairwise Dunn test results (Bonferroni-adjusted) for enzymes
 
 ---
 
-> Associated manuscript SUBMITTED to *Pattern Analysis and Applications* (Springer Nature).
-
+> 📄 Associated manuscript submitted to *Pattern Analysis and Applications* (Springer Nature).
 ---
 
 <p align="center">
   <sub>Built with QIIME2 · PICRUSt2 · R · vegan · phyloseq</sub>
 </p>
+
 
 
 
