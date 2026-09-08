@@ -22,5 +22,5 @@ Subsequent filtering removed singleton ASVs and features with fewer than 10 tota
 |---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
 | PRJNA517050 | VHD | Paired-end | `ACTCCTACGGGAGGCAGCAG` | `GGACTACHVGGGTWTCTAAT` | 0 | 251 | 0 | 240 | 2 | 2 | 0 | — |
 | PRJEB46824 | HC | Paired-end | `CCTAYGGGRBGCASCAG` | `GGACTACNNGGGTATCTAAT` | 0 | 0 | 0 | 0 | 2 | 2 | 0 | — |
-| PRJNA867698 | HD | Single-end | `CCTGTTCGATACCCGCACTTTCGAGCTTCAG` | NA | 0 | [verify] | NA | NA | [verify] | NA | 2 | Low read quality and substantial contamination |
+| PRJNA867698 | HD | Single-end | `CCTGTTCGATACCCGCACTTTCGAGCTTCAG` | NA | 0 | NA | NA | NA | NA| NA | 2 | Low read quality and substantial contamination |
 | PRJEB16755 | HC | Paired-end | `CCTAYGGGRBGCASCAG` | `GGACTACNNGGGTATCTAAT` | 0 | 0 | 0 | 0 | 2 | 2 | 0 | — |
